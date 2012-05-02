@@ -25,8 +25,8 @@ module CassandraObject
         end
       end
 
-      def write(key, attributes, schema_version)
-        attributes = encode_attributes(attributes, schema_version)
+      def write(key, attributes)
+        attributes = encode_attributes(attributes)
         ActiveSupport::Notifications.instrument("insert.cassandra_object", column_family: column_family, key: key, attributes: attributes) do
           dynamo_table.items.create(attributes)
           # connection.insert(column_family, key.to_s, attributes, consistency: thrift_write_consistency)
@@ -35,7 +35,6 @@ module CassandraObject
 
       def instantiate(key, attributes)
         allocate.tap do |object|
-          object.instance_variable_set("@schema_version", attributes.delete('schema_version'))
           object.instance_variable_set("@key", parse_key(key)) if key
           object.instance_variable_set("@new_record", false)
           object.instance_variable_set("@destroyed", false)
@@ -43,8 +42,8 @@ module CassandraObject
         end
       end
 
-      def encode_attributes(attributes, schema_version)
-        encoded = {"schema_version" => schema_version.to_s}
+      def encode_attributes(attributes)
+        encoded = {}
         attributes.each do |column_name, value|
           # The ruby thrift gem expects all strings to be encoded as ascii-8bit.
           unless value.nil?
@@ -138,7 +137,7 @@ module CassandraObject
 
       def write
         # changed_attributes = changed.inject({}) { |h, n| h[n] = read_attribute(n); h }
-        # self.class.write(key, changed_attributes, schema_version)
+        # self.class.write(key, changed_attributes)
         self.class.write(key, attributes, schema_version)
       end
   end
