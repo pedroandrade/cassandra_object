@@ -58,6 +58,7 @@ namespace :ks do
 
   private
     def schema_dump(env = Rails.env)
+      return
       File.open "#{Rails.root}/ks/schema.json", 'w' do |file|
         schema = ActiveSupport::JSON.decode(get_keyspace.schema_dump.to_json)
         JSON.pretty_generate(schema).split(/\n/).each do |line|

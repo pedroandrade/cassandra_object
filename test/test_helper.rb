@@ -5,7 +5,8 @@ Bundler.require(:default, :test)
 require 'support/connect'
 autoload :Issue, 'support/issue'
 begin
-  Issue.connection.tables.create('issues', 10, 10)
+  Issue.connection.tables.create(Issue.dynamo_table_name, 10, 10)
+  # p "created!"
 rescue
 end
 

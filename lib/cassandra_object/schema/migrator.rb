@@ -48,8 +48,9 @@ module CassandraObject
         end
 
         def get_all_versions
-          cas = CassandraObject::Base.connection
-          cas.get(schema_migrations_column_family, 'all').map {|(name, _value)| name.to_i}.sort
+          # cas = CassandraObject::Base.connection
+          # cas.get(schema_migrations_column_family, 'all').map {|(name, _value)| name.to_i}.sort
+          []
         end
 
         def current_version
@@ -176,9 +177,9 @@ module CassandraObject
       end
 
       private
-
         def column_family_tasks
-          Tasks::ColumnFamily.new(connection.keyspace)
+          Tasks::ColumnFamily.new(nil)
+          # connection.keyspace)
         end
 
         def connection
@@ -194,7 +195,7 @@ module CassandraObject
             connection.remove sm_cf, 'all', migration.version
           else
             @migrated_versions.push(migration.version).sort!
-            connection.insert sm_cf, 'all', { migration.version => migration.name }
+            # connection.insert sm_cf, 'all', { migration.version => migration.name }
           end
         end
 

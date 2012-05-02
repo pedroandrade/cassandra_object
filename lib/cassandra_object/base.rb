@@ -22,14 +22,6 @@ module CassandraObject
         end
         klass
       end
-
-      def dynamo_table
-        @dynamo_table ||= begin
-          table = connection.tables[column_family.underscore]
-          table.hash_key = [:id, :number]
-          table
-        end
-      end
     end
 
     extend ActiveModel::Naming

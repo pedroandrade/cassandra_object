@@ -96,7 +96,7 @@ module CassandraObject
 
         private
           def column_family_tasks
-            Tasks::ColumnFamily.new(CassandraObject::Base.connection.keyspace)
+            Tasks::ColumnFamily.new(nil)#CassandraObject::Base.connection.keyspace)
           end
       end
     end

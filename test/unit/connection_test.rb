@@ -6,10 +6,12 @@ class CassandraObject::ConnectionTest < CassandraObject::TestCase
 
   test 'establish_connection' do
     TestObject.establish_connection(
+      namespace: 'test',
       access_key_id: 'foo',
       secret_access_key: 'bar'
     )
 
+    assert_equal 'test', TestObject.namespace
     assert_equal 'foo', TestObject.connection.config.access_key_id
     assert_equal 'bar', TestObject.connection.config.secret_access_key
     # assert_not_equal CassandraObject::Base.connection, TestObject.connection
