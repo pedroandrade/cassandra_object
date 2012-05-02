@@ -48,12 +48,17 @@ module CassandraObject
         attributes.each do |column_name, value|
           # The ruby thrift gem expects all strings to be encoded as ascii-8bit.
           unless value.nil?
-            # encoded[column_name.to_s] = attribute_definitions[column_name.to_sym].coder.encode(value).force_encoding('ASCII-8BIT')
-            if definition = attribute_definitions[column_name.to_sym]
-              encoded[column_name.to_s] = definition.coder.encode(value)
+            value = if definition = attribute_definitions[column_name.to_sym]
+              definition.coder.encode(value)
             else
               encoded[column_name.to_s] = value.to_s
             end
+
+            unless value.empty?
+              encoded[column_name.to_s] = value
+            end
+
+            # encoded[column_name.to_s] = attribute_definitions[column_name.to_sym].coder.encode(value).force_encoding('ASCII-8BIT')
           end
         end
         encoded
