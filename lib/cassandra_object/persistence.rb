@@ -5,13 +5,17 @@ module CassandraObject
     module ClassMethods
       def remove(key)
         ActiveSupport::Notifications.instrument("remove.cassandra_object", column_family: column_family, key: key) do
-          connection.remove(column_family, key.to_s, consistency: thrift_write_consistency)
+          dynamo_table.items[key.to_s].delete
+          # connection.remove(column_family, key.to_s, consistency: thrift_write_consistency)
         end
       end
 
       def delete_all
         ActiveSupport::Notifications.instrument("truncate.cassandra_object", column_family: column_family) do
-          connection.truncate!(column_family)
+          # connection.truncate!(column_family)
+          dynamo_table.items.select do |data|
+            data.item.delete
+          end
         end
       end
 
@@ -24,10 +28,8 @@ module CassandraObject
       def write(key, attributes, schema_version)
         attributes = encode_attributes(attributes, schema_version)
         ActiveSupport::Notifications.instrument("insert.cassandra_object", column_family: column_family, key: key, attributes: attributes) do
-          connection.insert(column_family, key.to_s, attributes, consistency: thrift_write_consistency)
-          # if nil_attributes.any?
-            # connection.remove(connection, key.to_s, *nil_attributes)
-          # end          
+          dynamo_table.items.create(attributes)
+          # connection.insert(column_family, key.to_s, attributes, consistency: thrift_write_consistency)
         end
       end
 
@@ -46,7 +48,12 @@ module CassandraObject
         attributes.each do |column_name, value|
           # The ruby thrift gem expects all strings to be encoded as ascii-8bit.
           unless value.nil?
-            encoded[column_name.to_s] = attribute_definitions[column_name.to_sym].coder.encode(value).force_encoding('ASCII-8BIT')
+            # encoded[column_name.to_s] = attribute_definitions[column_name.to_sym].coder.encode(value).force_encoding('ASCII-8BIT')
+            if definition = attribute_definitions[column_name.to_sym]
+              encoded[column_name.to_s] = definition.coder.encode(value)
+            else
+              encoded[column_name.to_s] = value.to_s
+            end
           end
         end
         encoded
@@ -125,8 +132,9 @@ module CassandraObject
       end
 
       def write
-        changed_attributes = changed.inject({}) { |h, n| h[n] = read_attribute(n); h }
-        self.class.write(key, changed_attributes, schema_version)
+        # changed_attributes = changed.inject({}) { |h, n| h[n] = read_attribute(n); h }
+        # self.class.write(key, changed_attributes, schema_version)
+        self.class.write(key, attributes, schema_version)
       end
   end
 end

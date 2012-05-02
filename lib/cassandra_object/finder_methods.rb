@@ -8,8 +8,10 @@ module CassandraObject
 
         if key_string.blank?
           raise CassandraObject::RecordNotFound, "Couldn't find #{self.name} with key #{key.inspect}"
-        elsif attributes = connection.get(column_family, key_string, {:count => 500}).presence
-          instantiate(key_string, attributes)
+        # elsif attributes = connection.get(column_family, key_string, {:count => 500}).presence
+        elsif (attributes = dynamo_table.items[key_string].attributes.to_h).any?
+          # attributes = item.attributes.to_h
+          instantiate(attributes.delete('id'), attributes)
         else
           raise CassandraObject::RecordNotFound
         end
@@ -24,11 +26,13 @@ module CassandraObject
       def all(options = {})
         limit = options[:limit] || 100
         results = ActiveSupport::Notifications.instrument("get_range.cassandra_object", column_family: column_family, key_count: limit) do
-          connection.get_range(column_family, key_count: limit, consistency: thrift_read_consistency, count: 500)
+          dynamo_table.items.select#.limit(limit)
+          # connection.get_range(column_family, key_count: limit, consistency: thrift_read_consistency, count: 500)
         end
 
-        results.map do |k, v|
-          v.empty? ? nil : instantiate(k, v)
+        results.map do |result|
+          attributes = result.attributes
+          attributes.empty? ? nil : instantiate(attributes.delete("id"), attributes)
         end.compact
       end
 
@@ -46,15 +50,17 @@ module CassandraObject
       end
 
       def count
-        connection.count_range(column_family)
+        # connection.count_range(column_family)
+        dynamo_table.items.count
       end
 
       def multi_get(keys, options={})
         attribute_results = ActiveSupport::Notifications.instrument("multi_get.cassandra_object", column_family: column_family, keys: keys) do
-          connection.multi_get(column_family, keys.map(&:to_s), consistency: thrift_read_consistency, count: 500)
+          dynamo_table.batch_get(:all, keys.map(&:to_s))
         end
 
-        Hash[attribute_results.map do |key, attributes|
+        Hash[attribute_results.map do |attributes|
+          key = attributes.delete("id")
           [parse_key(key), attributes.present? ? instantiate(key, attributes) : nil]
         end]
       end

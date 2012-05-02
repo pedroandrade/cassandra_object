@@ -47,6 +47,7 @@ class CassandraObject::FinderMethodsTest < CassandraObject::TestCase
     third_issue = Issue.create
 
     assert_equal [], Issue.find_with_ids([])
+    assert_equal [first_issue].to_set, Issue.find_with_ids(first_issue.key).to_set
     assert_equal [first_issue, second_issue].to_set, Issue.find_with_ids(first_issue.key, second_issue.key).to_set
     assert_equal [first_issue, second_issue].to_set, Issue.find_with_ids([first_issue.key, second_issue.key]).to_set
   end

@@ -1,5 +1,6 @@
 require 'active_support/all'
 require 'active_model'
+require 'aws-sdk'
 
 module CassandraObject
   extend ActiveSupport::Autoload

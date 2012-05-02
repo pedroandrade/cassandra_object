@@ -4,9 +4,16 @@ Bundler.require(:default, :test)
 
 require 'support/connect'
 autoload :Issue, 'support/issue'
+begin
+  Issue.connection.tables.create('issues', 10, 10)
+rescue
+end
 
 module CassandraObject
   class TestCase < ActiveSupport::TestCase
+    setup do
+    end
+
     teardown do
       Issue.delete_all
     end
