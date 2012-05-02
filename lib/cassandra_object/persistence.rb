@@ -125,7 +125,7 @@ module CassandraObject
         dynamo_db_item.attributes.update do |u|
           changed.each do |attr|
             value = read_attribute(attr)
-            encoded = self.class.attribute_definitions[attr.to_sym].coder.encode(value)
+            encoded = self.class.coder_for(attr).encode(value)
 
             if encoded.blank?
               u.delete(attr)
@@ -140,7 +140,7 @@ module CassandraObject
         encoded_attributes = {self.class.primary_key => id}
         attributes.except!(self.class.primary_key).each do |k, v|
           next if v.nil?
-          encoded_attributes[k] = self.class.attribute_definitions[k.to_sym].coder.encode(v)
+          encoded_attributes[k] = self.class.coder_for(k).encode(v)
         end
         self.class.dynamo_table.items.create(encoded_attributes)
 
