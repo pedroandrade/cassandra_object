@@ -25,13 +25,12 @@ module CassandraObject
         end
       end
 
-      def write(key, attributes)
-        attributes = encode_attributes(attributes)
-        ActiveSupport::Notifications.instrument("insert.cassandra_object", column_family: column_family, key: key, attributes: attributes) do
-          dynamo_table.items.create(attributes)
-          # connection.insert(column_family, key.to_s, attributes, consistency: thrift_write_consistency)
-        end
-      end
+      # def write(key, attributes)
+      #   attributes = encode_attributes(attributes)
+      #   ActiveSupport::Notifications.instrument("insert.cassandra_object", column_family: column_family, key: key, attributes: attributes) do
+      #     connection.insert(column_family, key.to_s, attributes, consistency: thrift_write_consistency)
+      #   end
+      # end
 
       def instantiate(key, attributes)
         allocate.tap do |object|
@@ -42,26 +41,15 @@ module CassandraObject
         end
       end
 
-      def encode_attributes(attributes)
-        encoded = {}
-        attributes.each do |column_name, value|
-          # The ruby thrift gem expects all strings to be encoded as ascii-8bit.
-          unless value.nil?
-            value = if definition = attribute_definitions[column_name.to_sym]
-              definition.coder.encode(value)
-            else
-              encoded[column_name.to_s] = value.to_s
-            end
-
-            unless value.empty?
-              encoded[column_name.to_s] = value
-            end
-
-            # encoded[column_name.to_s] = attribute_definitions[column_name.to_sym].coder.encode(value).force_encoding('ASCII-8BIT')
-          end
-        end
-        encoded
-      end
+      # def encode_attributes(attributes)
+      #   encoded = {}
+      #   attributes.each do |column_name, value|
+      #     unless value.nil?
+      #       encoded[column_name.to_s] = attribute_definitions[column_name.to_sym].coder.encode(value).force_encoding('ASCII-8BIT')
+      #     end
+      #   end
+      #   encoded
+      # end
 
       def typecast_attributes(object, attributes)
         attributes = attributes.symbolize_keys
@@ -132,13 +120,32 @@ module CassandraObject
       end
     
       def update
-        write
+        dynamo_db_item = self.class.dynamo_table.items[id]
+        
+        dynamo_db_item.attributes.update do |u|
+          changed.each do |attr|
+            value = read_attribute(attr)
+            encoded = self.class.attribute_definitions[attr.to_sym].coder.encode(value)
+
+            if encoded.blank?
+              u.delete(attr)
+            else
+              u.set(attr => encoded)
+            end
+          end
+        end
       end
 
       def write
+        encoded_attributes = {self.class.primary_key => id}
+        attributes.except!(self.class.primary_key).each do |k, v|
+          next if v.nil?
+          encoded_attributes[k] = self.class.attribute_definitions[k.to_sym].coder.encode(v)
+        end
+        self.class.dynamo_table.items.create(encoded_attributes)
+
         # changed_attributes = changed.inject({}) { |h, n| h[n] = read_attribute(n); h }
         # self.class.write(key, changed_attributes)
-        self.class.write(key, attributes, schema_version)
       end
   end
 end

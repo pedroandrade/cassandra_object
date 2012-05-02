@@ -1,26 +1,26 @@
 require 'test_helper'
 
 class CassandraObject::PersistenceTest < CassandraObject::TestCase
-  test 'encode_attributes' do
-    klass = temp_object do
-      string :description
-    end
-    
-    assert_equal(
-      {},
-      klass.encode_attributes({})
-    )
-
-    assert_equal(
-      {},
-      klass.encode_attributes({description: nil})
-    )
-
-    assert_equal(
-      {'description' => 'lol'},
-      klass.encode_attributes({description: 'lol'})
-    )
-  end
+  # test 'encode_attributes' do
+  #   klass = temp_object do
+  #     string :description
+  #   end
+  #   
+  #   assert_equal(
+  #     {},
+  #     klass.encode_attributes({})
+  #   )
+  # 
+  #   assert_equal(
+  #     {},
+  #     klass.encode_attributes({description: nil})
+  #   )
+  # 
+  #   assert_equal(
+  #     {'description' => 'lol'},
+  #     klass.encode_attributes({description: 'lol'})
+  #   )
+  # end
 
   test 'persistance inquiries' do
     issue = Issue.new
