@@ -140,7 +140,10 @@ module CassandraObject
         encoded_attributes = {self.class.primary_key => id}
         attributes.except!(self.class.primary_key).each do |k, v|
           next if v.nil?
-          encoded_attributes[k] = self.class.coder_for(k).encode(v)
+
+          if (value = self.class.coder_for(k).encode(v)).present?
+            encoded_attributes[k] = value
+          end
         end
         self.class.dynamo_table.items.create(encoded_attributes)
 
