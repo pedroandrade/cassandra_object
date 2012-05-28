@@ -6,13 +6,11 @@ module CassandraObject
       def remove(key)
         ActiveSupport::Notifications.instrument("remove.cassandra_object", column_family: column_family, key: key) do
           dynamo_table.items[key.to_s].delete
-          # connection.remove(column_family, key.to_s, consistency: thrift_write_consistency)
         end
       end
 
       def delete_all
         ActiveSupport::Notifications.instrument("truncate.cassandra_object", column_family: column_family) do
-          # connection.truncate!(column_family)
           dynamo_table.items.select do |data|
             data.item.delete
           end
@@ -25,13 +23,6 @@ module CassandraObject
         end
       end
 
-      # def write(key, attributes)
-      #   attributes = encode_attributes(attributes)
-      #   ActiveSupport::Notifications.instrument("insert.cassandra_object", column_family: column_family, key: key, attributes: attributes) do
-      #     connection.insert(column_family, key.to_s, attributes, consistency: thrift_write_consistency)
-      #   end
-      # end
-
       def instantiate(key, attributes)
         allocate.tap do |object|
           object.instance_variable_set("@key", parse_key(key)) if key
@@ -40,16 +31,6 @@ module CassandraObject
           object.instance_variable_set("@attributes", typecast_attributes(object, attributes))
         end
       end
-
-      # def encode_attributes(attributes)
-      #   encoded = {}
-      #   attributes.each do |column_name, value|
-      #     unless value.nil?
-      #       encoded[column_name.to_s] = attribute_definitions[column_name.to_sym].coder.encode(value).force_encoding('ASCII-8BIT')
-      #     end
-      #   end
-      #   encoded
-      # end
 
       def typecast_attributes(object, attributes)
         attributes = attributes.symbolize_keys
@@ -146,9 +127,6 @@ module CassandraObject
           end
         end
         self.class.dynamo_table.items.create(encoded_attributes)
-
-        # changed_attributes = changed.inject({}) { |h, n| h[n] = read_attribute(n); h }
-        # self.class.write(key, changed_attributes)
       end
   end
 end

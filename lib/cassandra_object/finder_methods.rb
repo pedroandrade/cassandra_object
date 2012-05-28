@@ -8,9 +8,7 @@ module CassandraObject
 
         if key_string.blank?
           raise CassandraObject::RecordNotFound, "Couldn't find #{self.name} with key #{key.inspect}"
-        # elsif attributes = connection.get(column_family, key_string, {:count => 500}).presence
         elsif (attributes = dynamo_table.items[key_string].attributes.to_h).any?
-          # attributes = item.attributes.to_h
           instantiate(attributes.delete('id'), attributes)
         else
           raise CassandraObject::RecordNotFound
@@ -27,7 +25,6 @@ module CassandraObject
         limit = options[:limit] || 100
         results = ActiveSupport::Notifications.instrument("get_range.cassandra_object", column_family: column_family, key_count: limit) do
           dynamo_table.items.select#.limit(limit)
-          # connection.get_range(column_family, key_count: limit, consistency: thrift_read_consistency, count: 500)
         end
 
         results.map do |result|
@@ -50,7 +47,6 @@ module CassandraObject
       end
 
       def count
-        # connection.count_range(column_family)
         dynamo_table.items.count
       end
 
