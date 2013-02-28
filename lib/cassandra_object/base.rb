@@ -26,6 +26,10 @@ module CassandraObject
         @@config
       end
 
+      def hex_to_text(key_text)
+        key_text.scan(/../).map { |c| Array[c].pack("H2") }.join
+      end
+
       private
 
         # Returns the class descending directly from ActiveRecord::Base or an
