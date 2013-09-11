@@ -44,7 +44,7 @@ module CassandraObject
       end
 
       def wrap(record, name, value)
-        DirtyHash.new(record, name, Hash(value), options)
+        DirtyHash.new(record, name, Hash[value], options)
       end
 
     end
